@@ -228,14 +228,6 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
 
     @Override
     public void from(Object dependencyNotation) {
-        if (!imports.isEmpty()) {
-            throwVersionCatalogProblem(VersionCatalogProblemId.MULTIPLE_IMPORTS, spec ->
-                spec.withShortDescription("You can only import a single external catalog in a given catalog definition")
-                    .happensBecause("Multiple catalog imports are not yet supported")
-                    .addSolution("Create a separate catalog for each import you want to use")
-                    .documentedAt("platforms", "sec:sharing-catalogs")
-            );
-        }
         imports.add(new Import(dependencyNotation));
     }
 
@@ -271,6 +263,7 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
         validateAlias(AliasType.VERSION, alias);
         alias = intern(normalize(alias));
         if (versionConstraints.containsKey(alias)) {
+            validateAliasOverride(AliasType.VERSION, alias);
             // For versions, in order to allow overriding whatever is declared by
             // a platform, we want to silence overrides
             return alias;
@@ -332,6 +325,17 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
         return new DefaultAliasBuilder(alias).toPluginId(id);
     }
 
+    private void validateAliasOverride(AliasType type, String name) {
+        if (imports.size() > 1) {
+            // TODO Create VersionCatalogProblem
+            throw new IllegalStateException(
+                "Duplicate entry for " + type.name() + " '" + name + "'"
+                    + ": Overrides are not allowed on a catalog with multiple imports"
+                    + ". Split these into multiple catalogs if overriding an external version is required."
+            );
+        }
+    }
+
     private void validateAlias(AliasType type, String value) {
         if (!DependenciesModelHelper.ALIAS_PATTERN.matcher(value).matches()) {
             throwVersionCatalogProblem(VersionCatalogProblemId.INVALID_ALIAS_NOTATION, spec ->
@@ -359,6 +363,7 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
             .collect(Collectors.toList()));
         BundleModel previous = bundles.put(normalize(intern(alias)), new BundleModel(components, currentContext));
         if (previous != null) {
+            validateAliasOverride(AliasType.BUNDLE, alias);
             LOGGER.warn("Duplicate entry for bundle '{}': {} is replaced with {}", alias, previous.getComponents(), components);
         }
     }
@@ -533,6 +538,7 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
             DependencyModel model = new DependencyModel(owner.intern(group), owner.intern(name), null, version, owner.currentContext);
             Supplier<DependencyModel> previous = owner.libraries.put(owner.intern(alias), () -> model);
             if (previous != null) {
+                owner.validateAliasOverride(AliasType.LIBRARY, alias);
                 LOGGER.warn("Duplicate entry for alias '{}': {} is replaced with {}", alias, previous.get(), model);
             }
         }
@@ -587,6 +593,7 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
             PluginModel model = new PluginModel(owner.intern(id), null, version, owner.currentContext);
             Supplier<PluginModel> previous = owner.plugins.put(owner.intern(alias), () -> model);
             if (previous != null) {
+                owner.validateAliasOverride(AliasType.PLUGIN, alias);
                 LOGGER.warn("Duplicate entry for plugin '{}': {} is replaced with {}", alias, previous.get(), model);
             }
         }
@@ -617,6 +624,7 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
     private void createAliasWithVersionRef(String alias, String group, String name, String versionRef) {
         Supplier<DependencyModel> previous = libraries.put(intern(normalize(alias)), new VersionReferencingDependencyModel(group, name, normalize(versionRef)));
         if (previous != null) {
+            validateAliasOverride(AliasType.LIBRARY, alias);
             LOGGER.warn("Duplicate entry for alias '{}': {} is replaced with {}", alias, previous.get(), model);
         }
     }
@@ -624,6 +632,7 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
    private void createPluginAliasWithVersionRef(String alias, String id, String versionRef) {
         Supplier<PluginModel> previous = plugins.put(intern(normalize(alias)), new VersionReferencingPluginModel(id, normalize(versionRef)));
         if (previous != null) {
+            validateAliasOverride(AliasType.PLUGIN, alias);
             LOGGER.warn("Duplicate entry for plugin '{}': {} is replaced with {}", alias, previous.get(), model);
         }
     }

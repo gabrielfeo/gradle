@@ -18,6 +18,8 @@ package org.gradle.api.internal.catalog
 
 import com.google.common.collect.Interners
 import org.gradle.api.InvalidUserDataException
+import org.gradle.api.file.FileCollection
+import org.gradle.api.internal.file.TestFiles
 import org.gradle.api.internal.catalog.problems.VersionCatalogErrorMessages
 import org.gradle.api.internal.catalog.problems.VersionCatalogProblemId
 import org.gradle.api.internal.catalog.problems.VersionCatalogProblemTestFor
@@ -168,7 +170,7 @@ class DefaultVersionCatalogBuilderTest extends Specification implements VersionC
         notation << ["", "a", "1a", "A", "Aa", "abc\$", "abc&"]
     }
 
-    def "warns if multiple entries use the same alias"() {
+    def "warns if has no imports and multiple entries use the same alias"() {
         StandardOutputListener listener = Mock()
         def registry = LoggingServiceRegistry.newCommandLineProcessLogging()
         def loggingManager = registry.newInstance(LoggingManagerInternal)
@@ -188,7 +190,7 @@ class DefaultVersionCatalogBuilderTest extends Specification implements VersionC
         loggingManager.stop()
     }
 
-    def "warns if multiple entries use the same bundle name"() {
+    def "warns if has no imports and multiple entries use the same bundle name"() {
         StandardOutputListener listener = Mock()
         def registry = LoggingServiceRegistry.newCommandLineProcessLogging()
         def loggingManager = registry.newInstance(LoggingManagerInternal)
@@ -206,6 +208,74 @@ class DefaultVersionCatalogBuilderTest extends Specification implements VersionC
 
         cleanup:
         loggingManager.stop()
+    }
+
+    def "warns if has 1 import and multiple entries use the same alias"() {
+        StandardOutputListener listener = Mock()
+        def registry = LoggingServiceRegistry.newCommandLineProcessLogging()
+        def loggingManager = registry.newInstance(LoggingManagerInternal)
+        loggingManager.enableUserStandardOutputListeners()
+        loggingManager.addStandardOutputListener(listener)
+        loggingManager.start()
+
+        builder.from("any.toml")
+        builder.library("foo", "a:b:1.0")
+
+        when:
+        builder.library("foo", "e:f:1.1")
+
+        then:
+        1 * listener.onOutput("Duplicate entry for alias 'foo': dependency {group='a', name='b', version='1.0'} is replaced with dependency {group='e', name='f', version='1.1'}")
+
+        cleanup:
+        loggingManager.stop()
+    }
+
+    def "warns if has 1 import and multiple entries use the same bundle name"() {
+        StandardOutputListener listener = Mock()
+        def registry = LoggingServiceRegistry.newCommandLineProcessLogging()
+        def loggingManager = registry.newInstance(LoggingManagerInternal)
+        loggingManager.enableUserStandardOutputListeners()
+        loggingManager.addStandardOutputListener(listener)
+        loggingManager.start()
+
+        builder.from("any.toml")
+        builder.bundle("foo", ["a", "b"])
+
+        when:
+        builder.bundle("foo", ["c", "d", "e"])
+
+        then:
+        1 * listener.onOutput("Duplicate entry for bundle 'foo': [a, b] is replaced with [c, d, e]")
+
+        cleanup:
+        loggingManager.stop()
+    }
+
+    def "fails if has multiple imports and multiple entries use the same alias"() {
+        builder.from(files("any.toml"))
+        builder.from(files("another.toml"))
+        builder.library("foo", "a:b:1.0")
+
+        when:
+        builder.library("foo", "e:f:1.1")
+
+        then:
+        thrown(IllegalStateException)
+        // TODO Assert error
+    }
+
+    def "fails if has multiple imports and multiple entries use the same bundle name"() {
+        builder.from(files("any.toml"))
+        builder.from(files("another.toml"))
+        builder.bundle("foo", ["a", "b"])
+
+        when:
+        builder.bundle("foo", ["c", "d", "e"])
+
+        then:
+        thrown(IllegalStateException)
+        // TODO Assert error
     }
 
     @VersionCatalogProblemTestFor(
@@ -387,5 +457,9 @@ class DefaultVersionCatalogBuilderTest extends Specification implements VersionC
             versionRef('nope')
             existing('v1', 'v2')
         })
+    }
+
+    FileCollection files(String... paths) {
+        TestFiles.fixed(paths.collect { new File(it) })
     }
 }

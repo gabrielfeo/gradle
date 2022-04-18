@@ -459,7 +459,7 @@ my-lib = {group = "org.gradle.test", name="lib", version.require="1.0"}
     }
 
     // documents the existing behavior
-    def "TOML file wins over settings"() {
+    def "TOML file wins over settings and warns of entries with the same alias"() {
         tomlFile << """[libraries]
 my-lib = {group = "org.gradle.test", name="lib", version.require="1.1"}
 """
@@ -494,6 +494,29 @@ my-lib = {group = "org.gradle.test", name="lib", version.require="1.1"}
                 module('org.gradle.test:lib:1.1')
             }
         }
+    }
+
+    def "default TOML file counts as import"() {
+        tomlFile << """[libraries]
+foo = { group = "a", name="b", version = "1.0" }
+"""
+        testDirectory.file("gradle/other.versions.toml") << """[libraries]
+foo = { group = "b", name="c", version = "2.0" }
+"""
+        settingsFile << """
+            dependencyResolutionManagement {
+                versionCatalogs {
+                    libs {
+                        from(files("gradle/other.versions.toml"))
+                    }
+                }
+            }
+        """
+        when:
+        fails 'help'
+
+        then:
+        // TODO Assert failed due to 'duplicate entries + multiple imports' unsupported
     }
 
     @IgnoreIf({ GradleContextualExecuter.configCache })
