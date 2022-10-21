@@ -234,8 +234,8 @@ trait VersionCatalogErrorMessages {
             this
         }
 
-        ReservedAlias reservedAliasPrefix(String... suffixes) {
-            this.solution = "Use a different alias which prefix is not equal to ${oxfordListOf(suffixes as List, 'or')}"
+        ReservedAlias reservedAliasPrefix(String... prefixes) {
+            this.solution = "Use a different alias which prefix is not equal to ${oxfordListOf(prefixes as List, 'or')}"
             this
         }
 

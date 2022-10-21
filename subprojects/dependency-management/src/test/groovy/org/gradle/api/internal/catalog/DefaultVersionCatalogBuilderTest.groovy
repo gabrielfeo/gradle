@@ -25,6 +25,7 @@ import org.gradle.api.logging.StandardOutputListener
 import org.gradle.internal.logging.LoggingManagerInternal
 import org.gradle.internal.logging.services.LoggingServiceRegistry
 import org.gradle.util.TestUtil
+import spock.lang.Issue
 import spock.lang.Specification
 import spock.lang.Subject
 
@@ -75,6 +76,7 @@ class DefaultVersionCatalogBuilderTest extends Specification implements VersionC
     @VersionCatalogProblemTestFor(
         VersionCatalogProblemId.RESERVED_ALIAS_NAME
     )
+    @Issue("https://github.com/gradle/gradle/issues/21593")
     def "forbids using #name as a dependency alias"() {
         when:
         builder.library(name, "org:foo:1.0")
@@ -84,7 +86,7 @@ class DefaultVersionCatalogBuilderTest extends Specification implements VersionC
         verify(ex.message, reservedAlias {
             inCatalog('libs')
             alias(name).shouldNotBeEqualTo(prefix)
-            reservedAliasPrefix('bundles', 'plugins', 'versions')
+            reservedAliasPrefix('bundles', 'plugins', 'versions', 'extensions')
         })
 
         where:
@@ -92,9 +94,11 @@ class DefaultVersionCatalogBuilderTest extends Specification implements VersionC
         "bundles"             | "bundles"
         "versions"            | "versions"
         "plugins"             | "plugins"
+        "extensions"          | "extensions"
         "bundles-my"          | "bundles"
         "versions_my"         | "versions"
         "plugins.my"          | "plugins"
+        "extensions.my"       | "extensions"
     }
 
     @VersionCatalogProblemTestFor(
