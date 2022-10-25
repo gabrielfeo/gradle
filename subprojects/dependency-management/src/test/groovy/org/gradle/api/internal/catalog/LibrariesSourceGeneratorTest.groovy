@@ -272,7 +272,7 @@ ${nameClash { noIntro().kind('dependency bundles').inConflict('one.cool', 'oneCo
     @VersionCatalogProblemTestFor(
         VersionCatalogProblemId.TOO_MANY_ENTRIES
     )
-    def "reasonable error message if an alias uses a reserved name"() {
+    def "reasonable error message if too many entries"() {
         when:
         generate {
             16000.times { n ->
