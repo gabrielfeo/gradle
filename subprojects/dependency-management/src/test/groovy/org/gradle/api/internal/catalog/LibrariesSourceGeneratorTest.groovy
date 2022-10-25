@@ -258,7 +258,7 @@ ${nameClash { noIntro().kind('dependency bundles').inConflict('one.cool', 'oneCo
         InvalidUserDataException ex = thrown()
         verify ex.message, reservedAlias {
             alias(reservedName).shouldNotBeEqualTo(prefix)
-            reservedAliasPrefix('bundles', 'plugins', 'versions')
+            reservedAliasPrefix('bundles', 'plugins', 'versions', 'extensions')
         }
 
         where:
@@ -266,6 +266,7 @@ ${nameClash { noIntro().kind('dependency bundles').inConflict('one.cool', 'oneCo
         "bundles"             | "bundles"
         "versions"            | "versions"
         "plugins"             | "plugins"
+        "extensions"          | "extensions"
     }
 
     @VersionCatalogProblemTestFor(

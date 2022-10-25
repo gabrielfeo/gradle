@@ -84,7 +84,7 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
     }
 
     private final static Logger LOGGER = Logging.getLogger(DefaultVersionCatalogBuilder.class);
-    private final static List<String> FORBIDDEN_LIBRARY_ALIAS_PREFIX = ImmutableList.of("bundles", "versions", "plugins", "extensions");
+    private final static List<String> FORBIDDEN_LIBRARY_ALIAS_PREFIX = ImmutableList.of("bundles", "versions", "plugins");
     private final static Set<String> RESERVED_ALIAS_NAMES = ImmutableSet.of("extensions", "class", "convention");
 
     private final Interner<String> strings;
@@ -354,6 +354,14 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
             LOGGER.warn("Duplicate alias builder registered for {}", normalizedAlias);
         }
 
+        if (RESERVED_ALIAS_NAMES.contains(normalizedAlias)) {
+            throwVersionCatalogProblem(VersionCatalogProblemId.RESERVED_ALIAS_NAME, spec ->
+                    spec.withShortDescription(() -> "Alias '" + alias + "' is not a valid alias")
+                            .happensBecause(() -> "Alias '" + alias + "' is a reserved name in Gradle which prevents generation of accessors")
+                            .addSolution(() -> "Use a different alias which isn't in the reserved names " + oxfordListOf(RESERVED_ALIAS_NAMES, "or"))
+                            .documented()
+            );
+        }
         if (type == AliasType.LIBRARY) {
             for (String prefix : FORBIDDEN_LIBRARY_ALIAS_PREFIX) {
                 if (normalizedAlias.equals(prefix) || normalizedAlias.startsWith(prefix + ".")) {
@@ -365,14 +373,6 @@ public class DefaultVersionCatalogBuilder implements VersionCatalogBuilderIntern
                     );
                 }
             }
-        }
-        if (RESERVED_ALIAS_NAMES.contains(normalizedAlias)) {
-            throwVersionCatalogProblem(VersionCatalogProblemId.RESERVED_ALIAS_NAME, spec ->
-                    spec.withShortDescription(() -> "Alias '" + alias + "' is not a valid alias")
-                            .happensBecause(() -> "Alias '" + alias + "' is a reserved name in Gradle which prevents generation of accessors")
-                            .addSolution(() -> "Use a different alias which isn't in the reserved names " + oxfordListOf(RESERVED_ALIAS_NAMES, "or"))
-                            .documented()
-            );
         }
     }
 

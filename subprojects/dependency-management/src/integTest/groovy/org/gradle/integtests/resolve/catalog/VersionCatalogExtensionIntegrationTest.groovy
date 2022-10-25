@@ -1867,6 +1867,7 @@ Second: 1.1"""
     @VersionCatalogProblemTestFor(
         VersionCatalogProblemId.RESERVED_ALIAS_NAME
     )
+    @Issue("https://github.com/gradle/gradle/issues/21593")
     def "disallows aliases for dependency which prefix clash with reserved words"() {
         settingsFile << """
             dependencyResolutionManagement {
@@ -1886,17 +1887,18 @@ Second: 1.1"""
         verifyContains(failure.error, reservedAlias {
             inCatalog("libs")
             alias(reservedName).shouldNotBeEqualTo(prefix)
-            reservedAliasPrefix('bundles', 'plugins', 'versions')
+            reservedAliasPrefix('bundles', 'plugins', 'versions', 'extensions')
         })
 
         where:
-        reservedName  | prefix
-        "bundles"     | "bundles"
-        "versions"    | "versions"
-        "plugins"     | "plugins"
-        "bundles-my"  | "bundles"
-        "versions-my" | "versions"
-        "plugins-my"  | "plugins"
+        reservedName             | prefix
+        "bundles"                | "bundles"
+        "versions"               | "versions"
+        "plugins"                | "plugins"
+        "bundles-my"             | "bundles"
+        "versions-my"            | "versions"
+        "plugins-my"             | "plugins"
+        "extensions-my"          | "extensions"
     }
 
     @VersionCatalogProblemTestFor(
