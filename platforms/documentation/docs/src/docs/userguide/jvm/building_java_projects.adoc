@@ -419,11 +419,11 @@ This reporting feature works with the `—continue` flag.
 
 Many Java projects make use of resources beyond source files, such as images, configuration files and localization data.
 Sometimes these files simply need to be packaged unchanged and sometimes they need to be processed as template files or in some other way.
-Either way, the Java Library Plugin adds a specific link:{groovyDslPath}/org.gradle.api.tasks.Copy.html[Copy] task for each source set that handles the processing of its associated resources.
+Either way, the Java Library Plugin adds a specific link:{groovyDslPath}/org.gradle.language.jvm.tasks.ProcessResources.html[ProcessResources] task for each source set that handles the processing of its associated resources.
 
 The task's name follows the convention of `process__SourceSet__Resources` — or `processResources` for the `main` source set — and it will automatically copy any files in _src/[sourceSet]/resources_ to a directory that will be included in the production JAR. This target directory will also be included in the runtime classpath of the tests.
 
-Since `processResources` is an instance of the `ProcessResources` task, you can perform any of the processing described in the <<working_with_files.adoc#sec:copying_files,Working With Files>> chapter.
+Since `ProcessResources` is a subclass of the link:{groovyDslPath}/org.gradle.api.tasks.Copy.html[Copy] task, you can perform any of the processing described in the <<working_with_files.adoc#sec:copying_files,Working With Files>> chapter.
 
 [[sec:properties_files]]
 === Java properties files and reproducible builds
